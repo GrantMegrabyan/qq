@@ -1,0 +1,16 @@
+# Example configuration file for qq
+# Copy this file to ~/.qq (global config) or ./.qq (project-specific config)
+#
+# Priority order:
+# 1. Command-line arguments (highest)
+# 2. ./.qq (local/project config)
+# 3. ~/.qq (global/home config)
+
+# Default model to use
+model = "gpt-4"
+
+# Default persona to use
+persona = "helpful"
+
+# OpenRouter api key
+api_key = "..."
