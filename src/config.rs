@@ -13,9 +13,9 @@ struct ConfigFile {
 
 #[derive(Debug)]
 pub struct Config {
-    pub model: Option<String>,
+    pub model: String,
+    pub api_key: String,
     pub persona: Option<String>,
-    pub api_key: Option<String>,
 }
 
 impl Config {
@@ -32,7 +32,8 @@ impl Config {
                 .model
                 .clone()
                 .or(local_config.model)
-                .or(home_config.model),
+                .or(home_config.model)
+                .expect("model invalid"),
             persona: args
                 .persona
                 .clone()
@@ -41,7 +42,8 @@ impl Config {
             api_key: std::env::var("OPENAI_API_KEY")
                 .ok()
                 .or(local_config.api_key)
-                .or(home_config.api_key),
+                .or(home_config.api_key)
+                .expect("API key invalid"),
         }
     }
 

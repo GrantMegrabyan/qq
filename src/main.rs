@@ -8,6 +8,7 @@ use clap::Parser;
 use config::Config;
 
 use anyhow::Result;
+use spinoff::{Color, Spinner, spinners};
 
 use crate::{provider::LLMProvider, providers::OpenRouter};
 
@@ -27,12 +28,16 @@ async fn main() -> Result<()> {
     // Combine all remaining arguments into a single string
     let combined = args.args.join(" ");
 
-    let provider = OpenRouter::new(
-        &config.api_key.expect("No API key"),
-        &config.model.expect("No model"),
-    );
+    let provider = OpenRouter::new(&config.api_key, &config.model);
 
+    let mut spinner = Spinner::new(
+        spinners::Dots,
+        format!("Asking {}", config.model),
+        Color::Blue,
+    );
     let response = provider.prompt(SYSTEM_PROMPT, &combined).await?;
+    spinner.clear();
+
     println!("{response}");
 
     Ok(())
