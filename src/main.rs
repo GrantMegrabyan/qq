@@ -35,8 +35,10 @@ async fn main() -> Result<()> {
         format!("Asking {}", config.model),
         Color::Blue,
     );
+    let system_prompt = get_system_prompt(config.persona.unwrap_or(Persona::Default));
+    
     let response = provider
-        .prompt(&get_system_prompt(Persona::Default), &combined)
+        .prompt(&system_prompt, &combined)
         .await?;
     spinner.clear();
 
