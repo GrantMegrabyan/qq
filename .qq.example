@@ -10,7 +10,7 @@
 model = "gpt-4"
 
 # Default persona to use
-persona = "helpful"
+persona = "default"
 
 # OpenRouter api key
 api_key = "..."
