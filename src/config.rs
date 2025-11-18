@@ -12,6 +12,7 @@ struct ConfigFile {
     persona: Option<Persona>,
     api_key: Option<String>,
     auto_copy: bool,
+    log_file: Option<PathBuf>,
 }
 
 #[derive(Builder, Debug, Default)]
@@ -21,6 +22,7 @@ pub struct Config {
     pub api_key: String,
     pub persona: Option<Persona>,
     pub auto_copy: bool,
+    pub log_file: Option<PathBuf>,
 }
 
 impl Config {
@@ -39,6 +41,7 @@ impl Config {
                 config_builder.api_key(api_key);
             }
             config_builder.auto_copy(cf.auto_copy);
+            config_builder.log_file(cf.log_file);
         }
 
         // Check cli args
