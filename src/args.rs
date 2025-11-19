@@ -4,6 +4,7 @@ use crate::persona::Persona;
 
 #[derive(Parser)]
 #[command(name = "qq")]
+#[command(version)]
 #[command(about = "Query LLMs from the command line")]
 pub struct Args {
     /// Model to use
