@@ -5,7 +5,7 @@ authors = ["Grant Megrabyan <grant.megrabyan@gmail.com>"]
 edition = "2024"
 readme = "README.md"
 description = "A fast, minimal command-line tool for querying LLMs"
-license-file = "MIT"
+license = "MIT"
 repository = "https://github.com/grantmegrabyan/qq"
 
 [dependencies]
