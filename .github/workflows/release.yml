@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+        - os: ubuntu-latest
+          rust: stable
+          target: x86_64-unknown-linux-gnu
+          artifact_name: qq
+          asset_name: qq-linux-x86_64
+        - os: macos-latest
+          rust: stable
+          target: x86_64-apple-darwin
+          artifact_name: qq
+          asset_name: qq-macos-x86_64
+        - os: macos-latest
+          rust: stable
+          target: aarch64-apple-darwin
+          artifact_name: qq
+          asset_name: qq-macos-aarch64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Strip binary (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
+            aarch64-linux-gnu-strip target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+          else
+            strip target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+          fi
+
+      - name: Strip binary (macOS)
+        if: runner.os == 'macOS'
+        run: strip target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+
+      - name: Package binary
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf ${{ matrix.asset_name }}.tar.gz ${{ matrix.artifact_name }}
+          mv ${{ matrix.asset_name }}.tar.gz ../../..
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}.tar.gz
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*.tar.gz
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}

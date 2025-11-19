@@ -1,9 +1,11 @@
 [package]
 name = "qq"
-version = "0.1.1"
+version = "0.0.1"
+authors = ["Grant Megrabyan <grant.megrabyan@gmail.com>"]
 edition = "2024"
+readme = "README.md"
 description = "A fast, minimal command-line tool for querying LLMs"
-license-file = "LICENSE"
+license-file = "MIT"
 repository = "https://github.com/grantmegrabyan/qq"
 
 [dependencies]
@@ -19,3 +21,8 @@ serde_json = "1.0"
 spinoff = "0.8.0"
 tokio = { version = "1.40", features = ["macros", "rt-multi-thread"] }
 toml = "0.9.8"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
