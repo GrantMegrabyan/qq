@@ -2,13 +2,16 @@
 name = "qq"
 version = "0.1.0"
 edition = "2024"
+description = "A fast, minimal command-line tool for querying LLMs"
+license-file = "LICENSE"
+repository = "https://github.com/grantmegrabyan/qq"
 
 [dependencies]
 anyhow = "1.0.100"
 arboard = "3.6.1"
 async-openai = "0.30.1"
 chrono = "0.4"
-clap = { version = "4.5", features = ["derive"] }
+clap = { version = "4.5.52", features = ["derive"] }
 derive_builder = "0.20.2"
 log = "0.4.28"
 serde = { version = "1.0", features = ["derive"] }

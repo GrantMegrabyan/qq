@@ -1,0 +1,2 @@
+# Don't publish to crates.io
+publish = false
