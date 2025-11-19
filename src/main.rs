@@ -11,16 +11,14 @@ use args::Args;
 use chrono::Local;
 use clap::Parser;
 use config::Config;
-
-use anyhow::Result;
 use spinoff::{Color, Spinner, spinners};
+use std::time::Instant;
 
 use crate::logging::RequestLogEntryBuilder;
 use crate::persona::Persona;
 use crate::prompts::get_system_prompt;
 use crate::provider::LLMProvider;
 use crate::providers::OpenRouter;
-use std::time::Instant;
 
 #[tokio::main]
 async fn main() {
@@ -31,7 +29,7 @@ async fn main() {
     let args = Args::parse();
     let config = Config::load(&args);
 
-    let _ = run(&args, &config, &mut log_entry).await;
+    run(&args, &config, &mut log_entry).await;
 
     let total_duration = total_start.elapsed();
     log_entry.total_runtime_ms(total_duration.as_millis() as u64);
@@ -50,7 +48,7 @@ async fn main() {
     }
 }
 
-async fn run(args: &Args, config: &Config, log_entry: &mut RequestLogEntryBuilder) -> Result<()> {
+async fn run(args: &Args, config: &Config, log_entry: &mut RequestLogEntryBuilder) {
     log_entry.config(config);
 
     // Combine all remaining arguments into a single string
@@ -68,20 +66,29 @@ async fn run(args: &Args, config: &Config, log_entry: &mut RequestLogEntryBuilde
     let system_prompt = get_system_prompt(persona);
 
     let llm_start = Instant::now();
-    let response = provider.prompt(&system_prompt, &user_prompt).await?;
-    let llm_duration = llm_start.elapsed();
-    log_entry.response(&response);
-    log_entry.llm_response_time_ms(llm_duration.as_millis() as u64);
-    spinner.clear();
+    match provider.prompt(&system_prompt, &user_prompt).await {
+        Ok(response) => {
+            let llm_duration = llm_start.elapsed();
+            log_entry.response(&response);
+            log_entry.llm_response_time_ms(llm_duration.as_millis() as u64);
+            spinner.clear();
 
-    print!("{response}");
+            print!("{response}");
 
-    if config.auto_copy && copy_to_clipboard(&response) {
-        print!(" \x1b[90m(copied)\x1b[0m");
+            if config.auto_copy && copy_to_clipboard(&response) {
+                print!(" \x1b[90m(copied)\x1b[0m");
+            }
+            println!();
+        }
+        Err(err) => {
+            let llm_duration = llm_start.elapsed();
+            log_entry.error(format!("{:?}", err));
+            log_entry.llm_response_time_ms(llm_duration.as_millis() as u64);
+            spinner.clear();
+
+            println!("{err:?}");
+        }
     }
-    println!();
-
-    Ok(())
 }
 
 fn copy_to_clipboard(text: &str) -> bool {

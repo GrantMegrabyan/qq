@@ -13,8 +13,13 @@ use crate::persona::Persona;
 pub struct RequestLogEntry {
     pub time: String,
     pub config: ConfigForLogging,
+    #[builder(default)]
     pub user_prompt: String,
+    #[builder(default)]
     pub response: String,
+    #[builder(default)]
+    pub error: String,
+    #[builder(default)]
     pub llm_response_time_ms: u64,
     pub total_runtime_ms: u64,
 }
