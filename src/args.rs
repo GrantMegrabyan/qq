@@ -15,7 +15,7 @@ pub struct Args {
     pub persona: Option<Persona>,
 
     /// API key
-    #[arg[short, long]]
+    #[arg(short, long)]
     pub api_key: Option<String>,
 
     /// Rest of the arguments to be combined into a single string
