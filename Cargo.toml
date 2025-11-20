@@ -1,5 +1,5 @@
 [package]
-name = "qq"
+name = "qq-cli"
 version = "0.0.2"
 authors = ["Grant Megrabyan <grant.megrabyan@gmail.com>"]
 edition = "2024"
@@ -7,13 +7,20 @@ readme = "README.md"
 description = "A fast, minimal command-line tool for querying LLMs"
 license = "MIT"
 repository = "https://github.com/grantmegrabyan/qq"
+categories = ["command-line-utilities"]
+keywords = ["cli", "llm", "ai", "openai", "tooling"]
+
+# Keep the installed binary name as `qq`
+[[bin]]
+name = "qq"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.100"
 arboard = "3.6.1"
 async-openai = "0.30.1"
 chrono = "0.4"
-clap = { version = "4.5.52", features = ["derive"] }
+clap = { version = "4.5.53", features = ["derive"] }
 derive_builder = "0.20.2"
 log = "0.4.28"
 serde = { version = "1.0", features = ["derive"] }
