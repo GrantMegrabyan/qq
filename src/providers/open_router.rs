@@ -65,7 +65,7 @@ impl LLMProvider for OpenRouter {
                 Some(msg) => Ok(msg.to_string()),
                 None => Err(anyhow!("No content in the response message")),
             },
-            None => Err(anyhow!("Reponse is empty")),
+            None => Err(anyhow!("Response is empty")),
         }
     }
 }
