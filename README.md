@@ -84,6 +84,8 @@ The config file will be at `$QQ_HOME_PATH/config.toml`.
 
 ## Usage
 
+### Asking Questions
+
 Basic usage:
 
 ```bash
@@ -103,11 +105,28 @@ qq -a your-api-key "how to find large files"
 qq -m openai/gpt-4 -p default "curl POST example with json"
 ```
 
+### Configuration Commands
+
+Update your configuration directly from the command line:
+
+```bash
+# Set the active provider
+qq use provider openrouter
+
+# Set the model for the current provider
+qq use model anthropic/claude-3.5-sonnet
+
+# Change to a different model
+qq use model openai/gpt-4-turbo
+```
+
+These commands update your `~/.qq/config.toml` file and take effect immediately for all future queries.
+
 ### Command-line options
 
-- `-m, --model <MODEL>`: Specify the model to use
+- `-m, --model <MODEL>`: Specify the model to use (overrides config)
 - `-p, --persona <PERSONA>`: Specify the persona/system prompt
-- `-a, --api-key <API_KEY>`: Specify the API key
+- `-a, --api-key <API_KEY>`: Specify the API key (overrides config)
 
 All remaining arguments are combined into the prompt.
 

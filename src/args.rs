@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 use crate::persona::Persona;
 
@@ -7,6 +7,9 @@ use crate::persona::Persona;
 #[command(version)]
 #[command(about = "Query LLMs from the command line")]
 pub struct Args {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+
     /// Model to use
     #[arg(short, long)]
     pub model: Option<String>,
@@ -22,4 +25,19 @@ pub struct Args {
     /// Rest of the arguments to be combined into a single string
     #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
     pub args: Vec<String>,
+}
+
+#[derive(Subcommand)]
+pub enum Commands {
+    #[command(name = "use")]
+    Use {
+        #[command(subcommand)]
+        target: UseTarget,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum UseTarget {
+    Provider { name: String },
+    Model { name: String },
 }

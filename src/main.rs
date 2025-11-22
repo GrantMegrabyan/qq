@@ -7,7 +7,7 @@ mod provider;
 mod providers;
 
 use arboard::Clipboard;
-use args::Args;
+use args::{Args, Commands, UseTarget};
 use chrono::Local;
 use clap::Parser;
 use config::Config;
@@ -22,11 +22,31 @@ use crate::providers::OpenRouter;
 
 #[tokio::main]
 async fn main() {
+    let args = Args::parse();
+
+    // Handle use command
+    if let Some(command) = &args.command {
+        match command {
+            Commands::Use { target } => {
+                let result = match target {
+                    UseTarget::Provider { name } => Config::update_provider(name.clone()),
+                    UseTarget::Model { name } => Config::update_model(name.clone()),
+                };
+
+                if let Err(err) = result {
+                    eprintln!("Error: {}", err);
+                    std::process::exit(1);
+                }
+                return;
+            }
+        }
+    }
+
+    // Normal query mode
     let mut log_entry = RequestLogEntryBuilder::default();
     let total_start = Instant::now();
     log_entry.time(Local::now().to_rfc3339());
 
-    let args = Args::parse();
     let config = match Config::load(&args) {
         Ok(config) => config,
         Err(err) => {

@@ -17,6 +17,7 @@ cargo build --release
 
 # Run the tool (development)
 cargo run -- [OPTIONS] <PROMPT>
+cargo run -- use <COMMAND>
 
 # Run tests (if any exist)
 cargo test
@@ -54,11 +55,17 @@ Config files are TOML format with multi-provider support:
 
 **Auto-creation**: If no config file exists, `qq` will automatically create a default config template at `~/.qq/config.toml` on first run.
 
+**Configuration Commands**: The `use` subcommand allows updating config values:
+- `qq use provider <NAME>`: Set the active provider (e.g., `qq use provider openrouter`)
+- `qq use model <NAME>`: Set the model for the current provider (e.g., `qq use model anthropic/claude-3.5-sonnet`)
+
+These commands update the `~/.qq/config.toml` file directly.
+
 ### Module Organization
 
-- **`main.rs`**: Entry point; handles CLI parsing, config loading, dynamic provider instantiation, LLM calls, and logging
-- **`args.rs`**: CLI argument definitions using clap
-- **`config.rs`**: Multi-provider configuration loading with auto-creation, supports CLI argument overrides
+- **`main.rs`**: Entry point; handles CLI parsing, use command routing, config loading, dynamic provider instantiation, LLM calls, and logging
+- **`args.rs`**: CLI argument and subcommand definitions using clap (includes Commands and UseTarget enums)
+- **`config.rs`**: Multi-provider configuration loading with auto-creation, supports CLI argument overrides, and provides `update_provider()` and `update_model()` methods for config updates
 - **`provider.rs`**: `LLMProvider` trait with `async_trait` for dyn compatibility
 - **`providers/`**: Concrete provider implementations
   - `open_router.rs`: OpenRouter API client using async-openai with custom headers for analytics

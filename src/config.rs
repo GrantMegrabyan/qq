@@ -1,6 +1,6 @@
 use anyhow::{Result, anyhow};
 use derive_builder::Builder;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::{env, fs};
@@ -8,13 +8,13 @@ use std::{env, fs};
 use crate::args::Args;
 use crate::persona::Persona;
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ProviderConfig {
     pub api_key: String,
     pub model: String,
 }
 
-#[derive(Deserialize, Default, Debug)]
+#[derive(Deserialize, Serialize, Default, Debug)]
 struct ConfigFile {
     provider: Option<String>,
     providers: Option<HashMap<String, ProviderConfig>>,
@@ -44,13 +44,7 @@ impl Config {
             Self::create_default_config(&config_path)?;
         }
 
-        // Load config file
-        let config_file = fs::read_to_string(&config_path)
-            .map_err(|e| anyhow!("Failed to read config file {:?}: {}", config_path, e))
-            .and_then(|content| {
-                toml::from_str::<ConfigFile>(&content)
-                    .map_err(|e| anyhow!("Failed to parse config file {:?}: {}", config_path, e))
-            })?;
+        let config_file = Self::read_config(&config_path)?;
 
         // Get provider name
         let provider = config_file.provider.ok_or_else(|| {
@@ -155,5 +149,94 @@ model = "kwaipilot/kat-coder-pro:free"
             .map_err(|e| anyhow!("Failed to write config file {:?}: {}", config_path, e))?;
 
         Ok(())
+    }
+
+    pub fn update_provider(provider_name: String) -> Result<()> {
+        let config_path = Self::get_config_path();
+        let mut config_file: ConfigFile = Self::read_config(&config_path)?;
+
+        // Verify provider exists in config
+        if let Some(ref providers) = config_file.providers {
+            if !providers.contains_key(&provider_name) {
+                let available: Vec<_> = providers.keys().map(|s| s.as_str()).collect();
+                return Err(anyhow!(
+                    "Provider '{}' not found in config\n\nAvailable providers: {}\nAdd a [providers.{}] section to your config at {:?}",
+                    provider_name,
+                    available.join(", "),
+                    provider_name,
+                    config_path
+                ));
+            }
+        } else {
+            return Err(anyhow!(
+                "No providers configured in config at {:?}\nAdd a [providers.{}] section",
+                config_path,
+                provider_name
+            ));
+        }
+
+        // Update provider
+        config_file.provider = Some(provider_name.clone());
+
+        Self::save_config(&config_file, &config_path)?;
+
+        println!("✓ Provider set to '{}'", provider_name);
+        Ok(())
+    }
+
+    pub fn update_model(model_name: String) -> Result<()> {
+        let config_path = Self::get_config_path();
+        let mut config_file: ConfigFile = Self::read_config(&config_path)?;
+
+        // Get current provider
+        let provider = config_file.provider.clone().ok_or_else(|| {
+            anyhow!(
+                "No provider selected in config at {:?}\nSet 'provider = \"openrouter\"' first",
+                config_path
+            )
+        })?;
+
+        // Update model for current provider
+        if let Some(ref mut providers) = config_file.providers {
+            if let Some(provider_config) = providers.get_mut(&provider) {
+                provider_config.model = model_name.clone();
+            } else {
+                return Err(anyhow!(
+                    "Provider '{}' not found in config\nCheck your config at {:?}",
+                    provider,
+                    config_path
+                ));
+            }
+        } else {
+            return Err(anyhow!(
+                "No providers configured in config at {:?}",
+                config_path
+            ));
+        }
+
+        Self::save_config(&config_file, &config_path)?;
+
+        println!(
+            "✓ Model set to '{}' for provider '{}'",
+            model_name, provider
+        );
+        Ok(())
+    }
+
+    fn read_config(config_path: &PathBuf) -> Result<ConfigFile> {
+        // Load config file
+        fs::read_to_string(config_path)
+            .map_err(|e| anyhow!("Failed to read config file {:?}: {}", config_path, e))
+            .and_then(|content| {
+                toml::from_str::<ConfigFile>(&content)
+                    .map_err(|e| anyhow!("Failed to parse config file {:?}: {}", config_path, e))
+            })
+    }
+
+    fn save_config(config_file: &ConfigFile, config_path: &PathBuf) -> Result<()> {
+        let new_content = toml::to_string_pretty(config_file)
+            .map_err(|e| anyhow!("Failed to serialize config: {}", e))?;
+        fs::write(config_path, new_content)
+            .map_err(|e| anyhow!("Failed to write config file {:?}: {}", config_path, e))
     }
 }
