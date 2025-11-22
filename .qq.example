@@ -1,16 +1,16 @@
-# Example configuration file for qq
-# Copy this file to ~/.qq (global config) or ./.qq (project-specific config)
-#
-# Priority order:
-# 1. Command-line arguments (highest)
-# 2. ./.qq (local/project config)
-# 3. ~/.qq (global/home config)
-
-# Default model to use
-model = "gpt-4"
-
 # Default persona to use
 persona = "default"
 
-# OpenRouter api key
-api_key = "..."
+# Log requests into this file
+log_file = "./.qq.jsonl"
+
+# Automatically put the command into clipboard
+auto_copy = true
+
+# Provider to use
+provider = "openrouter"
+
+# OpenRouter Provider
+[providers.openrouter]
+api_key = "sk-or-v1-..."
+model = "kwaipilot/kat-coder-pro:free"

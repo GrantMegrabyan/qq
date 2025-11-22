@@ -38,6 +38,7 @@ impl RequestLogEntry {
 
 #[derive(Serialize, Clone)]
 pub struct ConfigForLogging {
+    pub provider: String,
     pub model: String,
     pub persona: Option<Persona>,
     pub auto_copy: bool,
@@ -46,6 +47,7 @@ pub struct ConfigForLogging {
 impl From<&Config> for ConfigForLogging {
     fn from(config: &Config) -> Self {
         Self {
+            provider: config.provider.clone(),
             model: config.model.clone(),
             persona: config.persona.clone(),
             auto_copy: config.auto_copy,

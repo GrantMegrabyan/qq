@@ -19,6 +19,7 @@ path = "src/main.rs"
 anyhow = "1.0.100"
 arboard = "3.6.1"
 async-openai = "0.30.1"
+async-trait = "0.1"
 chrono = "0.4"
 clap = { version = "4.5.53", features = ["derive"] }
 derive_builder = "0.20.2"

@@ -1,16 +1,23 @@
 use derive_builder::Builder;
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::{env, fs};
 
 use crate::args::Args;
 use crate::persona::Persona;
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct ProviderConfig {
+    pub api_key: String,
+    pub model: String,
+}
+
 #[derive(Deserialize, Default, Debug)]
 struct ConfigFile {
-    model: Option<String>,
+    provider: Option<String>,
+    providers: Option<HashMap<String, ProviderConfig>>,
     persona: Option<Persona>,
-    api_key: Option<String>,
     auto_copy: bool,
     log_file: Option<PathBuf>,
 }
@@ -18,6 +25,7 @@ struct ConfigFile {
 #[derive(Builder, Debug, Default)]
 #[builder(setter(into))]
 pub struct Config {
+    pub provider: String,
     pub model: String,
     pub api_key: String,
     pub persona: Option<Persona>,
@@ -26,25 +34,58 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load(args: &Args) -> Self {
+    pub fn load(args: &Args) -> Result<Self, String> {
+        let config_path = Self::get_config_path();
+
+        // Load config file
+        let config_file = if config_path.exists() {
+            log::debug!("Using config file: {:?}", config_path);
+            let content = fs::read_to_string(&config_path)
+                .map_err(|e| format!("Failed to read config file {:?}: {}", config_path, e))?;
+            toml::from_str::<ConfigFile>(&content)
+                .map_err(|e| format!("Failed to parse config file {:?}: {}", config_path, e))?
+        } else {
+            return Err(format!(
+                "Config file not found. Expected at: {:?}\n\nCreate a config file with:\n  provider = \"openrouter\"\n  \n  [providers.openrouter]\n  api_key = \"sk-or-v1-...\"\n  model = \"openai/gpt-4\"",
+                config_path
+            ));
+        };
+
+        // Get provider name
+        let provider = config_file.provider.ok_or_else(|| {
+            format!("No provider selected in config at {:?}\nSet 'provider = \"openrouter\"' in your config", config_path)
+        })?;
+
+        // Get providers map
+        let providers = config_file.providers.ok_or_else(|| {
+            format!("No providers configured in config at {:?}\nAdd a [providers.{}] section", config_path, provider)
+        })?;
+
+        // Get selected provider config
+        let provider_config = providers.get(&provider).ok_or_else(|| {
+            let available: Vec<_> = providers.keys().map(|s| s.as_str()).collect();
+            format!(
+                "Provider '{}' not found in config\n\nAvailable providers: {}\nCheck your config at {:?}",
+                provider,
+                available.join(", "),
+                config_path
+            )
+        })?.clone();
+
+        // Build config with provider values
         let mut config_builder = ConfigBuilder::default();
+        config_builder
+            .provider(provider)
+            .model(provider_config.model)
+            .api_key(provider_config.api_key);
 
-        // Check if there is a config file
-        if let Some(cf) = get_config_file(&PathBuf::from(".qq"), &Self::home_config_path()) {
-            if let Some(model) = cf.model {
-                config_builder.model(model);
-            }
-            if let Some(persona) = cf.persona {
-                config_builder.persona(persona);
-            }
-            if let Some(api_key) = cf.api_key {
-                config_builder.api_key(api_key);
-            }
-            config_builder.auto_copy(cf.auto_copy);
-            config_builder.log_file(cf.log_file);
+        if let Some(persona) = config_file.persona {
+            config_builder.persona(persona);
         }
+        config_builder.auto_copy(config_file.auto_copy);
+        config_builder.log_file(config_file.log_file);
 
-        // Check cli args
+        // CLI args override
         if let Some(model) = &args.model {
             config_builder.model(model);
         }
@@ -55,32 +96,22 @@ impl Config {
             config_builder.api_key(api_key);
         }
 
-        config_builder.build().unwrap_or_default()
+        config_builder.build()
+            .map_err(|e| format!("Failed to build config: {}", e))
     }
 
-    fn home_config_path() -> PathBuf {
+    fn get_config_path() -> PathBuf {
+        // Check QQ_HOME_PATH environment variable
+        if let Ok(qq_home) = env::var("QQ_HOME_PATH") {
+            let mut path = PathBuf::from(qq_home);
+            path.push("config.toml");
+            return path;
+        }
+
+        // Fall back to ~/.qq/config.toml
         let mut path = env::home_dir().unwrap_or_else(|| PathBuf::from("."));
         path.push(".qq");
+        path.push("config.toml");
         path
     }
-}
-
-fn get_config_file(local_config_path: &PathBuf, home_config_path: &PathBuf) -> Option<ConfigFile> {
-    let path = if local_config_path.exists() {
-        log::debug!("Using local config file: {:?}", local_config_path);
-        local_config_path
-    } else if home_config_path.exists() {
-        log::debug!("Using home config file: {:?}", home_config_path);
-        home_config_path
-    } else {
-        log::debug!("No config file found");
-        return None;
-    };
-
-    let config_file = fs::read_to_string(path)
-        .ok()
-        .and_then(|content| toml::from_str(&content).ok())
-        .unwrap_or(ConfigFile::default());
-
-    Some(config_file)
 }

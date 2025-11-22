@@ -7,6 +7,7 @@ use async_openai::{
         ChatCompletionRequestUserMessageArgs, CreateChatCompletionRequestArgs,
     },
 };
+use async_trait::async_trait;
 
 use crate::provider::LLMProvider;
 
@@ -30,6 +31,7 @@ impl OpenRouter {
     }
 }
 
+#[async_trait]
 impl LLMProvider for OpenRouter {
     async fn prompt(&self, system_prompt: &str, user_prompt: &str) -> anyhow::Result<String> {
         let system_message = ChatCompletionRequestSystemMessageArgs::default()

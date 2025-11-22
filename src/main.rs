@@ -27,7 +27,13 @@ async fn main() {
     log_entry.time(Local::now().to_rfc3339());
 
     let args = Args::parse();
-    let config = Config::load(&args);
+    let config = match Config::load(&args) {
+        Ok(config) => config,
+        Err(err) => {
+            eprintln!("Error loading config: {}", err);
+            std::process::exit(1);
+        }
+    };
 
     run(&args, &config, &mut log_entry).await;
 
@@ -55,7 +61,17 @@ async fn run(args: &Args, config: &Config, log_entry: &mut RequestLogEntryBuilde
     let user_prompt = args.args.join(" ");
     log_entry.user_prompt(&user_prompt);
 
-    let provider = OpenRouter::new(&config.api_key, &config.model);
+    // Dynamically instantiate provider based on config
+    let provider: Box<dyn LLMProvider> = match config.provider.as_str() {
+        "openrouter" => Box::new(OpenRouter::new(&config.api_key, &config.model)),
+        _ => {
+            eprintln!(
+                "Error: Unsupported provider '{}'\n\nCurrently supported providers: openrouter",
+                config.provider
+            );
+            std::process::exit(1);
+        }
+    };
 
     let mut spinner = Spinner::new(
         spinners::Dots,
