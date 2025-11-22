@@ -38,19 +38,19 @@ impl Config {
     pub fn load(args: &Args) -> Result<Self> {
         let config_path = Self::get_config_path();
 
+        // Create default config if it doesn't exist
+        if !config_path.exists() {
+            println!("Creating configuration file at {:?}...", config_path);
+            Self::create_default_config(&config_path)?;
+        }
+
         // Load config file
-        let config_file = if config_path.exists() {
-            log::debug!("Using config file: {:?}", config_path);
-            let content = fs::read_to_string(&config_path)
-                .map_err(|e| anyhow!("Failed to read config file {:?}: {}", config_path, e))?;
-            toml::from_str::<ConfigFile>(&content)
-                .map_err(|e| anyhow!("Failed to parse config file {:?}: {}", config_path, e))?
-        } else {
-            return Err(anyhow!(
-                "Config file not found. Expected at: {:?}\n\nCreate a config file with:\n  provider = \"openrouter\"\n  \n  [providers.openrouter]\n  api_key = \"sk-or-v1-...\"\n  model = \"openai/gpt-4\"",
-                config_path
-            ));
-        };
+        let config_file = fs::read_to_string(&config_path)
+            .map_err(|e| anyhow!("Failed to read config file {:?}: {}", config_path, e))
+            .and_then(|content| {
+                toml::from_str::<ConfigFile>(&content)
+                    .map_err(|e| anyhow!("Failed to parse config file {:?}: {}", config_path, e))
+            })?;
 
         // Get provider name
         let provider = config_file.provider.ok_or_else(|| {
@@ -119,5 +119,41 @@ impl Config {
         path.push(".qq");
         path.push("config.toml");
         path
+    }
+
+    fn create_default_config(config_path: &PathBuf) -> Result<()> {
+        // Create parent directory if it doesn't exist
+        if let Some(parent) = config_path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| anyhow!("Failed to create config directory {:?}: {}", parent, e))?;
+        }
+
+        // Default config content
+        let default_config = r#"# Persona to use
+persona = "default"
+
+# Automatically copy responses to clipboard
+auto_copy = true
+
+# Log requests to a JSONL file (optional)
+log_file = "./.qq.jsonl"
+
+# Provider to use
+provider = "openrouter"
+
+# ==========================================
+# Provider-Specific Configuration
+# ==========================================
+
+# OpenRouter Provider
+[providers.openrouter]
+api_key = ""
+model = "kwaipilot/kat-coder-pro:free"
+"#;
+
+        fs::write(config_path, default_config)
+            .map_err(|e| anyhow!("Failed to write config file {:?}: {}", config_path, e))?;
+
+        Ok(())
     }
 }

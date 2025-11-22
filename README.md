@@ -34,38 +34,53 @@ cp target/release/qq /usr/local/bin/
 
 ## Configuration
 
-`qq` supports configuration through TOML files. It looks for configuration in this order:
+`qq` uses a global configuration file that is **automatically created** on first run. Configuration precedence:
 
-1. `.qq` in the current directory (project-specific config)
-2. `~/.qq` in your home directory (global config)
-3. Command-line arguments (highest priority)
+1. Command-line arguments (highest priority)
+2. Global config file (`~/.qq/config.toml` or `$QQ_HOME_PATH/config.toml`)
 
-### Example configuration file
+### First Run
 
-Create a file at `~/.qq`:
+On first run, `qq` will automatically create a default config file at `~/.qq/config.toml`:
 
 ```toml
-# Required: Your OpenRouter API key
-api_key = "your-api-key-here"
+# Persona to use
+persona = "default"
 
-# Required: Model to use (any model from OpenRouter)
-model = "openai/gpt-5-nano"
-
-# Optional: Automatically copy responses to clipboard (default: false)
+# Automatically copy responses to clipboard
 auto_copy = true
 
-# Optional: Log requests and responses to a file
-log_file = "/Users/you/.qq.jsonl"
+# Log requests to a JSONL file (optional)
+log_file = "./.qq.jsonl"
 
-# Optional: System prompt persona (currently only "default" is available)
-persona = "default"
+# Provider to use
+provider = "openrouter"
+
+# ==========================================
+# Provider-Specific Configuration
+# ==========================================
+
+# OpenRouter Provider
+[providers.openrouter]
+api_key = ""
+model = "kwaipilot/kat-coder-pro:free"
 ```
 
-### Get an API key
+### Setup
 
-1. Sign up at [OpenRouter](https://openrouter.ai/)
-2. Generate an API key
-3. Add it to your config file
+1. Sign up at [OpenRouter](https://openrouter.ai/) and get your API key at [https://openrouter.ai/keys](https://openrouter.ai/keys)
+2. Run `qq` once to generate the config file
+3. Edit `~/.qq/config.toml` and add your API key to the `[providers.openrouter]` section
+
+### Custom Config Location
+
+You can set a custom config directory using the `QQ_HOME_PATH` environment variable:
+
+```bash
+export QQ_HOME_PATH=/path/to/your/config/directory
+```
+
+The config file will be at `$QQ_HOME_PATH/config.toml`.
 
 ## Usage
 
@@ -120,7 +135,7 @@ qq "how to make a POST request with curl including headers"
 If you configure a `log_file`, all requests and responses are logged in JSON Lines format:
 
 ```json
-{"time":"2025-01-19T10:30:00-08:00","config":{"model":"anthropic/claude-3.5-sonnet","persona":"default","auto_copy":true},"user_prompt":"how to list files","response":"ls -la","llm_response_time_ms":450,"total_runtime_ms":502}
+{"time":"2025-01-19T10:30:00-08:00","config":{"provider":"openrouter","model":"anthropic/claude-3.5-sonnet","persona":"default","auto_copy":true},"user_prompt":"how to list files","response":"ls -la","llm_response_time_ms":450,"total_runtime_ms":502}
 ```
 
 This is useful for:
