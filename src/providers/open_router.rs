@@ -8,6 +8,7 @@ use async_openai::{
     },
 };
 use async_trait::async_trait;
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
 use crate::provider::LLMProvider;
 
@@ -20,10 +21,23 @@ pub struct OpenRouter {
 
 impl OpenRouter {
     pub fn new(api_key: &str, model: &str) -> Self {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            HeaderName::from_static("http-referer"),
+            HeaderValue::from_static("https://github.com/grantmegrabyan/qq"),
+        );
+        headers.insert(
+            HeaderName::from_static("x-title"),
+            HeaderValue::from_static("qq"),
+        );
+        let http_client = reqwest::Client::builder()
+            .default_headers(headers)
+            .build()
+            .unwrap_or_default();
         let config = OpenAIConfig::new()
             .with_api_base(OPEN_ROUTER_API_BASE)
             .with_api_key(api_key);
-        let client = Client::with_config(config);
+        let client = Client::with_config(config).with_http_client(http_client);
         Self {
             client,
             model: model.to_string(),
