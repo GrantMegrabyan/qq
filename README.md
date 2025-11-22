@@ -70,7 +70,9 @@ model = "kwaipilot/kat-coder-pro:free"
 
 1. Sign up at [OpenRouter](https://openrouter.ai/) and get your API key at [https://openrouter.ai/keys](https://openrouter.ai/keys)
 2. Run `qq` once to generate the config file
-3. Edit `~/.qq/config.toml` and add your API key to the `[providers.openrouter]` section
+3. Set your API key using either method:
+   - **Command line** (recommended): `qq use key sk-or-v1-your-api-key-here`
+   - **Manual edit**: Edit `~/.qq/config.toml` and add your API key to the `[providers.openrouter]` section
 
 ### Custom Config Location
 
@@ -110,6 +112,9 @@ qq -m openai/gpt-4 -p default "curl POST example with json"
 Update your configuration directly from the command line:
 
 ```bash
+# Set the API key for the current provider
+qq use key sk-or-v1-your-api-key-here
+
 # Set the active provider
 qq use provider openrouter
 

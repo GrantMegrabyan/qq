@@ -31,6 +31,7 @@ async fn main() {
                 let result = match target {
                     UseTarget::Provider { name } => Config::update_provider(name.clone()),
                     UseTarget::Model { name } => Config::update_model(name.clone()),
+                    UseTarget::Key { key } => Config::update_api_key(key.clone()),
                 };
 
                 if let Err(err) = result {

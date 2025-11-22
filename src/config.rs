@@ -71,10 +71,19 @@ impl Config {
             )
         })?.clone();
 
+        // Check if API key is set (unless overridden by CLI args)
+        if args.api_key.is_none() && provider_config.api_key.trim().is_empty() {
+            return Err(anyhow!(
+                "API key not set for provider '{}'\n\nSet your API key with: qq use key YOUR_API_KEY\nOr edit your config at {:?}",
+                provider,
+                config_path
+            ));
+        }
+
         // Build config with provider values
         let mut config_builder = ConfigBuilder::default();
         config_builder
-            .provider(provider)
+            .provider(provider.clone())
             .model(provider_config.model)
             .api_key(provider_config.api_key);
 
@@ -220,6 +229,42 @@ model = "kwaipilot/kat-coder-pro:free"
             "✓ Model set to '{}' for provider '{}'",
             model_name, provider
         );
+        Ok(())
+    }
+
+    pub fn update_api_key(api_key: String) -> Result<()> {
+        let config_path = Self::get_config_path();
+        let mut config_file: ConfigFile = Self::read_config(&config_path)?;
+
+        // Get current provider
+        let provider = config_file.provider.clone().ok_or_else(|| {
+            anyhow!(
+                "No provider selected in config at {:?}\nSet 'provider = \"openrouter\"' first",
+                config_path
+            )
+        })?;
+
+        // Update API key for current provider
+        if let Some(ref mut providers) = config_file.providers {
+            if let Some(provider_config) = providers.get_mut(&provider) {
+                provider_config.api_key = api_key.clone();
+            } else {
+                return Err(anyhow!(
+                    "Provider '{}' not found in config\nCheck your config at {:?}",
+                    provider,
+                    config_path
+                ));
+            }
+        } else {
+            return Err(anyhow!(
+                "No providers configured in config at {:?}",
+                config_path
+            ));
+        }
+
+        Self::save_config(&config_file, &config_path)?;
+
+        println!("✓ API key set for provider '{}'", provider);
         Ok(())
     }
 

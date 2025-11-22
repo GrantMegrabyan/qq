@@ -29,6 +29,7 @@ pub struct Args {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Configure provider and model settings
     #[command(name = "use")]
     Use {
         #[command(subcommand)]
@@ -38,6 +39,19 @@ pub enum Commands {
 
 #[derive(Subcommand)]
 pub enum UseTarget {
-    Provider { name: String },
-    Model { name: String },
+    /// Set the active provider
+    Provider {
+        /// Provider name (e.g., "openrouter")
+        name: String,
+    },
+    /// Set the model for the active provider
+    Model {
+        /// Model name (e.g., "anthropic/claude-3.5-sonnet")
+        name: String,
+    },
+    /// Set the API key for the active provider
+    Key {
+        /// API key for the current provider
+        key: String,
+    },
 }

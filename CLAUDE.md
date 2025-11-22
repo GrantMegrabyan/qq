@@ -58,8 +58,9 @@ Config files are TOML format with multi-provider support:
 **Configuration Commands**: The `use` subcommand allows updating config values:
 - `qq use provider <NAME>`: Set the active provider (e.g., `qq use provider openrouter`)
 - `qq use model <NAME>`: Set the model for the current provider (e.g., `qq use model anthropic/claude-3.5-sonnet`)
+- `qq use key <KEY>`: Set the API key for the current provider (e.g., `qq use key sk-...`)
 
-These commands update the `~/.qq/config.toml` file directly.
+These commands update the `~/.qq/config.toml` file directly. If the API key is missing or empty when attempting a query, a helpful error message will guide users to set it using `qq use key YOUR_API_KEY`.
 
 ### Module Organization
 
