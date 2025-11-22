@@ -60,12 +60,11 @@ impl LLMProvider for OpenRouter {
             .await
             .context("Failed to get response")?;
 
-        match response.choices.first() {
-            Some(first) => match &first.message.content {
-                Some(msg) => Ok(msg.to_string()),
-                None => Err(anyhow!("No content in the response message")),
-            },
-            None => Err(anyhow!("Response is empty")),
-        }
+        response
+            .choices
+            .first()
+            .and_then(|first| first.message.content.as_ref())
+            .map(|content| content.to_string())
+            .ok_or_else(|| anyhow!("Response is empty or contains no content"))
     }
 }
