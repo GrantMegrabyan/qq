@@ -1,6 +1,6 @@
 [package]
 name = "qq-cli"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["Grant Megrabyan <grant.megrabyan@gmail.com>"]
 edition = "2024"
 readme = "README.md"
