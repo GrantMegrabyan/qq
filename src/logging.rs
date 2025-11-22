@@ -49,7 +49,7 @@ impl From<&Config> for ConfigForLogging {
         Self {
             provider: config.provider.clone(),
             model: config.model.clone(),
-            persona: config.persona.clone(),
+            persona: config.persona,
             auto_copy: config.auto_copy,
         }
     }

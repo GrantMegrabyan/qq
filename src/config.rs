@@ -1,3 +1,4 @@
+use anyhow::{Result, anyhow};
 use derive_builder::Builder;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -34,18 +35,18 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load(args: &Args) -> Result<Self, String> {
+    pub fn load(args: &Args) -> Result<Self> {
         let config_path = Self::get_config_path();
 
         // Load config file
         let config_file = if config_path.exists() {
             log::debug!("Using config file: {:?}", config_path);
             let content = fs::read_to_string(&config_path)
-                .map_err(|e| format!("Failed to read config file {:?}: {}", config_path, e))?;
+                .map_err(|e| anyhow!("Failed to read config file {:?}: {}", config_path, e))?;
             toml::from_str::<ConfigFile>(&content)
-                .map_err(|e| format!("Failed to parse config file {:?}: {}", config_path, e))?
+                .map_err(|e| anyhow!("Failed to parse config file {:?}: {}", config_path, e))?
         } else {
-            return Err(format!(
+            return Err(anyhow!(
                 "Config file not found. Expected at: {:?}\n\nCreate a config file with:\n  provider = \"openrouter\"\n  \n  [providers.openrouter]\n  api_key = \"sk-or-v1-...\"\n  model = \"openai/gpt-4\"",
                 config_path
             ));
@@ -53,18 +54,22 @@ impl Config {
 
         // Get provider name
         let provider = config_file.provider.ok_or_else(|| {
-            format!("No provider selected in config at {:?}\nSet 'provider = \"openrouter\"' in your config", config_path)
+            anyhow!("No provider selected in config at {:?}\nSet 'provider = \"openrouter\"' in your config", config_path)
         })?;
 
         // Get providers map
         let providers = config_file.providers.ok_or_else(|| {
-            format!("No providers configured in config at {:?}\nAdd a [providers.{}] section", config_path, provider)
+            anyhow!(
+                "No providers configured in config at {:?}\nAdd a [providers.{}] section",
+                config_path,
+                provider
+            )
         })?;
 
         // Get selected provider config
         let provider_config = providers.get(&provider).ok_or_else(|| {
             let available: Vec<_> = providers.keys().map(|s| s.as_str()).collect();
-            format!(
+            anyhow!(
                 "Provider '{}' not found in config\n\nAvailable providers: {}\nCheck your config at {:?}",
                 provider,
                 available.join(", "),
@@ -90,14 +95,15 @@ impl Config {
             config_builder.model(model);
         }
         if let Some(persona) = &args.persona {
-            config_builder.persona(persona.clone());
+            config_builder.persona(*persona);
         }
         if let Some(api_key) = &args.api_key {
             config_builder.api_key(api_key);
         }
 
-        config_builder.build()
-            .map_err(|e| format!("Failed to build config: {}", e))
+        config_builder
+            .build()
+            .map_err(|e| anyhow!("Failed to build config: {}", e))
     }
 
     fn get_config_path() -> PathBuf {
@@ -109,7 +115,7 @@ impl Config {
         }
 
         // Fall back to ~/.qq/config.toml
-        let mut path = env::home_dir().unwrap_or_else(|| PathBuf::from("."));
+        let mut path = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
         path.push(".qq");
         path.push("config.toml");
         path

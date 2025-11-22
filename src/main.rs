@@ -65,11 +65,13 @@ async fn run(args: &Args, config: &Config, log_entry: &mut RequestLogEntryBuilde
     let provider: Box<dyn LLMProvider> = match config.provider.as_str() {
         "openrouter" => Box::new(OpenRouter::new(&config.api_key, &config.model)),
         _ => {
-            eprintln!(
+            let error = format!(
                 "Error: Unsupported provider '{}'\n\nCurrently supported providers: openrouter",
                 config.provider
             );
-            std::process::exit(1);
+            log_entry.error(&error);
+            eprintln!("{}", error);
+            return;
         }
     };
 
@@ -78,7 +80,7 @@ async fn run(args: &Args, config: &Config, log_entry: &mut RequestLogEntryBuilde
         format!("Asking {}", config.model),
         Color::Blue,
     );
-    let persona = config.persona.clone().unwrap_or(Persona::Default);
+    let persona = config.persona.unwrap_or(Persona::Default);
     let system_prompt = get_system_prompt(persona);
 
     let llm_start = Instant::now();
