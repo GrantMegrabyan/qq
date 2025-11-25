@@ -5,7 +5,7 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::PathBuf;
 
-use crate::config::Config;
+use crate::configs::Config;
 use crate::persona::Persona;
 
 #[derive(Serialize, Builder, Clone)]

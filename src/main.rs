@@ -1,5 +1,5 @@
 mod args;
-mod config;
+mod configs;
 mod logging;
 mod persona;
 mod prompts;
@@ -10,10 +10,11 @@ use arboard::Clipboard;
 use args::{Args, Commands, UseTarget};
 use chrono::Local;
 use clap::Parser;
-use config::Config;
 use spinoff::{Color, Spinner, spinners};
 use std::time::Instant;
 
+use crate::configs::Config;
+use crate::configs::ProdConfigService;
 use crate::logging::RequestLogEntryBuilder;
 use crate::persona::Persona;
 use crate::prompts::get_system_prompt;
@@ -24,14 +25,23 @@ use crate::providers::OpenRouter;
 async fn main() {
     let args = Args::parse();
 
+    let config_service = ProdConfigService::default();
+    let config = match config_service.load(&args) {
+        Ok(config) => config,
+        Err(err) => {
+            eprintln!("Error loading config: {}", err);
+            std::process::exit(1);
+        }
+    };
+
     // Handle use command
     if let Some(command) = &args.command {
         match command {
             Commands::Use { target } => {
                 let result = match target {
-                    UseTarget::Provider { name } => Config::update_provider(name.clone()),
-                    UseTarget::Model { name } => Config::update_model(name.clone()),
-                    UseTarget::Key { key } => Config::update_api_key(key.clone()),
+                    UseTarget::Provider { name } => config_service.update_provider(name),
+                    UseTarget::Model { name } => config_service.update_model(name),
+                    UseTarget::Key { key } => config_service.update_api_key(key),
                 };
 
                 if let Err(err) = result {
@@ -47,14 +57,6 @@ async fn main() {
     let mut log_entry = RequestLogEntryBuilder::default();
     let total_start = Instant::now();
     log_entry.time(Local::now().to_rfc3339());
-
-    let config = match Config::load(&args) {
-        Ok(config) => config,
-        Err(err) => {
-            eprintln!("Error loading config: {}", err);
-            std::process::exit(1);
-        }
-    };
 
     run(&args, &config, &mut log_entry).await;
 
