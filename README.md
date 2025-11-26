@@ -3,6 +3,7 @@
 A fast, minimal command-line tool for querying LLMs directly from your terminal.
 
 ![Tests](https://github.com/grantmegrabyan/qq/actions/workflows/test.yml/badge.svg)
+[![Code Coverage](https://codecov.io/gh/grantmegrabyan/qq/branch/main/graph/badge.svg)](https://codecov.io/gh/grantmegrabyan/qq)
 
 ## Overview
 
