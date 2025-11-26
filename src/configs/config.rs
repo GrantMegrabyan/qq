@@ -130,7 +130,7 @@ mod tests {
         assert_eq!(config.model, "anthropic/claude-3.5-sonnet");
         assert_eq!(config.api_key, "test-api-key");
         assert_eq!(config.persona, Some(Persona::Default));
-        assert_eq!(config.auto_copy, false);
+        assert!(!config.auto_copy);
     }
 
     #[test]
@@ -168,10 +168,10 @@ mod tests {
     #[test]
     fn test_missing_api_key_error() {
         let mut config_file = create_test_config_file();
-        if let Some(providers) = &mut config_file.providers {
-            if let Some(provider_config) = providers.get_mut("openrouter") {
-                provider_config.api_key = "".to_string();
-            }
+        if let Some(providers) = &mut config_file.providers
+            && let Some(provider_config) = providers.get_mut("openrouter")
+        {
+            provider_config.api_key = "".to_string();
         }
         let args = create_test_args();
 
@@ -182,10 +182,10 @@ mod tests {
     #[test]
     fn test_missing_api_key_but_cli_override() {
         let mut config_file = create_test_config_file();
-        if let Some(providers) = &mut config_file.providers {
-            if let Some(provider_config) = providers.get_mut("openrouter") {
-                provider_config.api_key = "".to_string();
-            }
+        if let Some(providers) = &mut config_file.providers
+            && let Some(provider_config) = providers.get_mut("openrouter")
+        {
+            provider_config.api_key = "".to_string();
         }
         let mut args = create_test_args();
         args.api_key = Some("cli-key".to_string());

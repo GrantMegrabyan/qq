@@ -2,6 +2,8 @@
 
 A fast, minimal command-line tool for querying LLMs directly from your terminal.
 
+![Tests](https://github.com/grantmegrabyan/qq/actions/workflows/test.yml/badge.svg)
+
 ## Overview
 
 `qq` lets you ask questions to Large Language Models and get instant responses in your terminal. It's designed for developers who want quick answers to commands, code snippets, or other questions without leaving the command line.
