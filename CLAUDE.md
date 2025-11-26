@@ -64,9 +64,14 @@ These commands update the `~/.qq/config.toml` file directly. If the API key is m
 
 ### Module Organization
 
-- **`main.rs`**: Entry point; handles CLI parsing, use command routing, config loading, dynamic provider instantiation, LLM calls, and logging
+- **`main.rs`**: Entry point; handles CLI parsing, use command routing, config service initialization, dynamic provider instantiation, LLM calls, and logging
 - **`args.rs`**: CLI argument and subcommand definitions using clap (includes Commands and UseTarget enums)
-- **`config.rs`**: Multi-provider configuration loading with auto-creation, supports CLI argument overrides, and provides `update_provider()` and `update_model()` methods for config updates
+- **`configs/`**: Configuration system with dependency injection for testability
+  - **`config.rs`**: Core `Config` struct with `from_config_file()` method that merges config file and CLI args; includes comprehensive unit tests
+  - **`config_file.rs`**: `ConfigFile` struct for TOML deserialization with `update_provider()`, `update_model()`, and `update_api_key()` methods; includes unit tests
+  - **`config_service.rs`**: `ConfigService` with dependency-injected `FileSystem` and `Environment` traits; handles config file I/O, auto-creation, and updates
+  - **`types.rs`**: Shared types including `ProviderConfig`, `FileSystem` trait, `Environment` trait, and production implementations (`RealFileSystem`, `RealEnvironment`)
+  - **`mod.rs`**: Module exports; exposes `Config` and `ProdConfigService` publicly
 - **`provider.rs`**: `LLMProvider` trait with `async_trait` for dyn compatibility
 - **`providers/`**: Concrete provider implementations
   - `open_router.rs`: OpenRouter API client using async-openai with custom headers for analytics
@@ -101,6 +106,29 @@ All requests are logged to a JSON Lines file if `log_file` is configured. Each l
 - Total runtime (milliseconds)
 
 Logging is built using the builder pattern (`RequestLogEntryBuilder`) and writes happen in `main.rs` after the request completes.
+
+### Testing
+
+The codebase includes unit tests for critical components:
+
+- **`configs/config.rs`**: Tests for `Config::from_config_file()` including:
+  - Successful config creation from valid config file
+  - CLI argument override behavior (model, API key, persona)
+  - Error handling (missing provider, missing API key, provider not found)
+  - API key override via CLI when config file key is empty
+
+- **`configs/config_file.rs`**: Tests for config update methods:
+  - `update_model()` - updating model for current provider
+  - `update_api_key()` - updating API key for current provider
+  - `update_provider()` - switching active provider
+  - Error cases for non-existent providers
+
+Run tests with:
+```bash
+cargo test
+```
+
+The configuration system uses dependency injection (`FileSystem` and `Environment` traits) to enable testing without filesystem access. Mock implementations can be provided for `ConfigService` tests.
 
 ### Key Dependencies
 
