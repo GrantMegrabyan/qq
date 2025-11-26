@@ -79,3 +79,73 @@ impl ConfigFile {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anyhow::Result;
+    use std::collections::HashMap;
+
+    use super::ConfigFile;
+    use super::Persona;
+    use super::ProviderConfig;
+
+    fn create_config_file() -> ConfigFile {
+        ConfigFile {
+            providers: Some(HashMap::from([
+                (
+                    "openrouter".to_string(),
+                    ProviderConfig {
+                        api_key: "openrouter-key".to_string(),
+                        model: "gpt-4".to_string(),
+                    },
+                ),
+                (
+                    "openai".to_string(),
+                    ProviderConfig {
+                        api_key: "openai-key".to_string(),
+                        model: "gpt-3.5".to_string(),
+                    },
+                ),
+            ])),
+            provider: Some("openrouter".to_string()),
+            persona: Some(Persona::Default),
+            auto_copy: true,
+            log_file: None,
+        }
+    }
+
+    #[test]
+    fn test_update_model() -> Result<()> {
+        let mut config = create_config_file();
+        config.update_model("gpt-5")?;
+        assert_eq!(config.providers.unwrap()["openrouter"].model, "gpt-5");
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_api_key() -> Result<()> {
+        let mut config = create_config_file();
+        config.update_api_key("new-api-key")?;
+        assert_eq!(
+            config.providers.unwrap()["openrouter"].api_key,
+            "new-api-key"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_provider() -> Result<()> {
+        let mut config = create_config_file();
+        config.update_provider("openai")?;
+        assert_eq!(config.provider.unwrap(), "openai");
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_provider_to_non_existing() -> Result<()> {
+        let mut config = create_config_file();
+        let result = config.update_provider("non-existing-provider");
+        assert!(result.is_err());
+        Ok(())
+    }
+}
