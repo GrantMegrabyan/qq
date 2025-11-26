@@ -84,3 +84,125 @@ impl Config {
             .map_err(|e| anyhow!("Failed to build config: {}", e))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::configs::types::ProviderConfig;
+    use std::collections::HashMap;
+
+    fn create_test_args() -> Args {
+        Args {
+            command: None,
+            model: None,
+            persona: None,
+            api_key: None,
+            args: vec![],
+        }
+    }
+
+    fn create_test_config_file() -> ConfigFile {
+        ConfigFile {
+            provider: Some("openrouter".to_string()),
+            providers: Some(HashMap::from([(
+                "openrouter".to_string(),
+                ProviderConfig {
+                    api_key: "test-api-key".to_string(),
+                    model: "anthropic/claude-3.5-sonnet".to_string(),
+                },
+            )])),
+            persona: Some(Persona::Default),
+            auto_copy: false,
+            log_file: None,
+        }
+    }
+
+    #[test]
+    fn test_from_config_file_success() {
+        let config_file = create_test_config_file();
+        let args = create_test_args();
+
+        let result = Config::from_config_file(&config_file, &args);
+        assert!(result.is_ok());
+
+        let config = result.unwrap();
+        assert_eq!(config.provider, "openrouter");
+        assert_eq!(config.model, "anthropic/claude-3.5-sonnet");
+        assert_eq!(config.api_key, "test-api-key");
+        assert_eq!(config.persona, Some(Persona::Default));
+        assert_eq!(config.auto_copy, false);
+    }
+
+    #[test]
+    fn test_cli_args_override_model() {
+        let config_file = create_test_config_file();
+        let mut args = create_test_args();
+        args.model = Some("gpt-4".to_string());
+
+        let config = Config::from_config_file(&config_file, &args)
+            .expect("config should be created successfully");
+        assert_eq!(config.model, "gpt-4");
+    }
+
+    #[test]
+    fn test_cli_args_override_api_key() {
+        let config_file = create_test_config_file();
+        let mut args = create_test_args();
+        args.api_key = Some("override-key".to_string());
+
+        let config = Config::from_config_file(&config_file, &args)
+            .expect("config should be created successfully");
+        assert_eq!(config.api_key, "override-key");
+    }
+
+    #[test]
+    fn test_missing_provider_error() {
+        let mut config_file = create_test_config_file();
+        config_file.provider = None;
+        let args = create_test_args();
+
+        let result = Config::from_config_file(&config_file, &args);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_missing_api_key_error() {
+        let mut config_file = create_test_config_file();
+        if let Some(providers) = &mut config_file.providers {
+            if let Some(provider_config) = providers.get_mut("openrouter") {
+                provider_config.api_key = "".to_string();
+            }
+        }
+        let args = create_test_args();
+
+        let result = Config::from_config_file(&config_file, &args);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_missing_api_key_but_cli_override() {
+        let mut config_file = create_test_config_file();
+        if let Some(providers) = &mut config_file.providers {
+            if let Some(provider_config) = providers.get_mut("openrouter") {
+                provider_config.api_key = "".to_string();
+            }
+        }
+        let mut args = create_test_args();
+        args.api_key = Some("cli-key".to_string());
+
+        let result = Config::from_config_file(&config_file, &args);
+        assert!(result.is_ok());
+        let config = result.expect("config should be created successfully");
+        assert_eq!(config.api_key, "cli-key");
+    }
+
+    #[test]
+    fn test_provider_not_in_providers_map() {
+        let mut config_file = create_test_config_file();
+        config_file.provider = Some("nonexistent".to_string());
+        let args = create_test_args();
+
+        let result = Config::from_config_file(&config_file, &args);
+        assert!(result.is_err());
+    }
+}

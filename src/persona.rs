@@ -1,7 +1,7 @@
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize, Clone, ValueEnum, Copy)]
+#[derive(Debug, Deserialize, Serialize, Clone, ValueEnum, Copy, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum Persona {
     Default,
