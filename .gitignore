@@ -9,3 +9,6 @@ target
 # App config and log files
 .qq
 .qq.jsonl
+
+# Coverage
+lcov.info
