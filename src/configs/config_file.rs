@@ -123,6 +123,15 @@ mod tests {
     }
 
     #[test]
+    fn test_update_model_no_provider_selected() -> Result<()> {
+        let mut config = create_config_file();
+        config.provider = None;
+        let result = config.update_model("gpt-5");
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
     fn test_update_api_key() -> Result<()> {
         let mut config = create_config_file();
         config.update_api_key("new-api-key")?;
@@ -145,6 +154,15 @@ mod tests {
     fn test_update_provider_to_non_existing() -> Result<()> {
         let mut config = create_config_file();
         let result = config.update_provider("non-existing-provider");
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_provider_when_no_providers() -> Result<()> {
+        let mut config = create_config_file();
+        config.providers = None;
+        let result = config.update_provider("openrouter");
         assert!(result.is_err());
         Ok(())
     }
