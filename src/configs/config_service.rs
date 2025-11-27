@@ -138,3 +138,186 @@ impl Default for ProdConfigService {
         Self::new(RealFileSystem, RealEnvironment)
     }
 }
+
+#[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
+mod tests {
+    use super::*;
+    use crate::configs::types::{MockEnvironment, MockFileSystem};
+
+    fn create_test_args() -> Args {
+        Args {
+            command: None,
+            model: None,
+            persona: None,
+            api_key: None,
+            args: vec![],
+        }
+    }
+
+    #[test]
+    fn test_get_config_path_with_qq_home_env() {
+        let mut mock_env = MockEnvironment::new();
+        let mock_fs = MockFileSystem::new();
+
+        mock_env
+            .expect_var()
+            .with(mockall::predicate::eq("QQ_HOME_PATH"))
+            .times(1)
+            .returning(|_| Ok("/custom/path".to_string()));
+
+        let service = ConfigService::new(mock_fs, mock_env);
+        let result = service.get_config_path();
+
+        assert_eq!(result, PathBuf::from("/custom/path/config.toml"));
+    }
+
+    #[test]
+    fn test_get_config_path_with_home_dir() {
+        let mut mock_env = MockEnvironment::new();
+        let mock_fs = MockFileSystem::new();
+
+        mock_env
+            .expect_var()
+            .with(mockall::predicate::eq("QQ_HOME_PATH"))
+            .times(1)
+            .returning(|_| Err(anyhow::anyhow!("QQ_HOME_PATH not set")));
+
+        mock_env
+            .expect_home_dir()
+            .times(1)
+            .returning(|| Some(PathBuf::from("/home/user")));
+
+        let service = ConfigService::new(mock_fs, mock_env);
+        let result = service.get_config_path();
+
+        assert_eq!(result, PathBuf::from("/home/user/.qq/config.toml"));
+    }
+
+    #[test]
+    fn test_load_existing_config() {
+        let mut mock_env = MockEnvironment::new();
+        let mut mock_fs = MockFileSystem::new();
+
+        mock_env
+            .expect_var()
+            .returning(|_| Err(anyhow::anyhow!("Not set")));
+
+        mock_env
+            .expect_home_dir()
+            .returning(|| Some(PathBuf::from("/home/user")));
+
+        mock_fs.expect_exists().times(1).returning(|_| true);
+
+        mock_fs.expect_read_to_string().times(1).returning(|_| {
+            Ok(r#"
+    provider = "openrouter"
+    persona = "default"
+    auto_copy = false
+
+    [providers.openrouter]
+    api_key = "test-key"
+    model = "anthropic/claude-3.5-sonnet"
+    "#
+            .to_string())
+        });
+
+        let service = ConfigService::new(mock_fs, mock_env);
+        let args = create_test_args();
+        let result = service.load(&args);
+
+        assert!(result.is_ok());
+        let config = result.unwrap();
+        assert_eq!(config.provider, "openrouter");
+        assert_eq!(config.model, "anthropic/claude-3.5-sonnet");
+        assert_eq!(config.api_key, "test-key");
+    }
+
+    #[test]
+    fn test_load_creates_default_config_if_not_exists() {
+        let mut mock_env = MockEnvironment::new();
+        let mut mock_fs = MockFileSystem::new();
+
+        mock_env
+            .expect_var()
+            .returning(|_| Err(anyhow::anyhow!("Not set")));
+
+        mock_env
+            .expect_home_dir()
+            .returning(|| Some(PathBuf::from("/home/user")));
+
+        // Config doesn't exist
+        mock_fs.expect_exists().times(1).returning(|_| false);
+
+        // Should create directory
+        mock_fs
+            .expect_create_dir_all()
+            .times(1)
+            .returning(|_| Ok(()));
+
+        // Should write default config
+        mock_fs.expect_write().times(1).returning(|_, _| Ok(()));
+
+        // Then read the newly created config (with a non-empty API key for validation)
+        mock_fs.expect_read_to_string().times(1).returning(|_| {
+            Ok(r#"
+    provider = "openrouter"
+    persona = "default"
+    auto_copy = true
+
+    [providers.openrouter]
+    api_key = "test-key"
+    model = "kwaipilot/kat-coder-pro:free"
+    "#
+            .to_string())
+        });
+
+        let service = ConfigService::new(mock_fs, mock_env);
+        let args = create_test_args();
+        let result = service.load(&args);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_update_provider() {
+        let mut mock_env = MockEnvironment::new();
+        let mut mock_fs = MockFileSystem::new();
+
+        mock_env
+            .expect_var()
+            .returning(|_| Err(anyhow::anyhow!("Not set")));
+
+        mock_env
+            .expect_home_dir()
+            .returning(|| Some(PathBuf::from("/home/user")));
+
+        mock_fs.expect_read_to_string().times(1).returning(|_| {
+            Ok(r#"
+    provider = "openrouter"
+    persona = "default"
+    auto_copy = false
+
+    [providers.openrouter]
+    api_key = "test-key"
+    model = "anthropic/claude-3.5-sonnet"
+
+    [providers.anthropic]
+    api_key = "anthropic-key"
+    model = "claude-3-opus"
+    "#
+            .to_string())
+        });
+
+        mock_fs
+            .expect_write()
+            .times(1)
+            .withf(|_, content: &str| content.contains(r#"provider = "anthropic""#))
+            .returning(|_, _| Ok(()));
+
+        let service = ConfigService::new(mock_fs, mock_env);
+        let result = service.update_provider("anthropic");
+
+        assert!(result.is_ok());
+    }
+}

@@ -32,7 +32,14 @@ spinoff = "0.8.0"
 tokio = { version = "1.40", features = ["macros", "rt-multi-thread"] }
 toml = "0.9.8"
 
+[dev-dependencies]
+mockall = "0.13"
+
 [profile.release]
 lto = true
 codegen-units = 1
 strip = true
+
+[lints.rust]
+# Needed for llvm-cov
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage,coverage_nightly)'] }

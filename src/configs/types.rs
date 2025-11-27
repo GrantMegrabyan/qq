@@ -9,6 +9,7 @@ pub struct ProviderConfig {
     pub model: String,
 }
 
+#[cfg_attr(test, mockall::automock)]
 pub trait FileSystem {
     fn read_to_string(&self, path: &Path) -> Result<String>;
     fn exists(&self, path: &Path) -> bool;
@@ -35,6 +36,7 @@ impl FileSystem for RealFileSystem {
     }
 }
 
+#[cfg_attr(test, mockall::automock)]
 pub trait Environment {
     fn var(&self, key: &str) -> Result<String>;
     fn home_dir(&self) -> Option<PathBuf>;
