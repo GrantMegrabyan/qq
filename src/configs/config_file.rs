@@ -81,6 +81,7 @@ impl ConfigFile {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use anyhow::Result;
     use std::collections::HashMap;

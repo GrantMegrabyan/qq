@@ -6,6 +6,7 @@
       "type": "shell",
       "command": "cargo",
       "args": [
+        "+nightly",
         "llvm-cov",
         "nextest",
         "--lcov",
