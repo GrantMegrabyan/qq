@@ -21,15 +21,7 @@ pub struct OpenRouter {
 
 impl OpenRouter {
     pub fn new(api_key: &str, model: &str) -> Self {
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            HeaderName::from_static("http-referer"),
-            HeaderValue::from_static("https://github.com/grantmegrabyan/qq"),
-        );
-        headers.insert(
-            HeaderName::from_static("x-title"),
-            HeaderValue::from_static("qq"),
-        );
+        let headers = Self::get_headers();
         let http_client = reqwest::Client::builder()
             .default_headers(headers)
             .build()
@@ -42,6 +34,19 @@ impl OpenRouter {
             client,
             model: model.to_string(),
         }
+    }
+
+    fn get_headers() -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            HeaderName::from_static("http-referer"),
+            HeaderValue::from_static("https://github.com/grantmegrabyan/qq"),
+        );
+        headers.insert(
+            HeaderName::from_static("x-title"),
+            HeaderValue::from_static("qq"),
+        );
+        headers
     }
 }
 
@@ -80,5 +85,22 @@ impl LLMProvider for OpenRouter {
             .and_then(|first| first.message.content.as_ref())
             .map(|content| content.to_string())
             .ok_or_else(|| anyhow!("Response is empty or contains no content"))
+    }
+}
+
+#[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
+mod tests {
+    use super::OpenRouter;
+
+    #[test]
+    fn test_get_headers() {
+        let headers = OpenRouter::get_headers();
+        assert_eq!(headers.len(), 2);
+        assert_eq!(
+            headers.get("http-referer").unwrap(),
+            "https://github.com/grantmegrabyan/qq"
+        );
+        assert_eq!(headers.get("x-title").unwrap(), "qq");
     }
 }
