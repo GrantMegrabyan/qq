@@ -21,13 +21,17 @@ pub struct OpenRouter {
 
 impl OpenRouter {
     pub fn new(api_key: &str, model: &str) -> Self {
+        Self::with_base_url(api_key, model, OPEN_ROUTER_API_BASE)
+    }
+
+    fn with_base_url(api_key: &str, model: &str, base_url: &str) -> Self {
         let headers = Self::get_headers();
         let http_client = reqwest::Client::builder()
             .default_headers(headers)
             .build()
             .unwrap_or_default();
         let config = OpenAIConfig::new()
-            .with_api_base(OPEN_ROUTER_API_BASE)
+            .with_api_base(base_url)
             .with_api_key(api_key);
         let client = Client::with_config(config).with_http_client(http_client);
         Self {
@@ -48,11 +52,12 @@ impl OpenRouter {
         );
         headers
     }
-}
 
-#[async_trait]
-impl LLMProvider for OpenRouter {
-    async fn prompt(&self, system_prompt: &str, user_prompt: &str) -> anyhow::Result<String> {
+    fn build_request(
+        &self,
+        system_prompt: &str,
+        user_prompt: &str,
+    ) -> anyhow::Result<async_openai::types::CreateChatCompletionRequest> {
         let system_message = ChatCompletionRequestSystemMessageArgs::default()
             .content(system_prompt)
             .build()?;
@@ -71,6 +76,15 @@ impl LLMProvider for OpenRouter {
             .messages(messages)
             .build()
             .context("Failed to build request")?;
+
+        Ok(request)
+    }
+}
+
+#[async_trait]
+impl LLMProvider for OpenRouter {
+    async fn prompt(&self, system_prompt: &str, user_prompt: &str) -> anyhow::Result<String> {
+        let request = self.build_request(system_prompt, user_prompt)?;
 
         let response = self
             .client
@@ -102,5 +116,47 @@ mod tests {
             "https://github.com/grantmegrabyan/qq"
         );
         assert_eq!(headers.get("x-title").unwrap(), "qq");
+    }
+
+    #[test]
+    fn test_build_request() {
+        use async_openai::types::{
+            ChatCompletionRequestMessage, ChatCompletionRequestSystemMessageContent,
+            ChatCompletionRequestUserMessageContent,
+        };
+
+        let provider = OpenRouter::new("test-api-key", "anthropic/claude-3.5-sonnet");
+        let system_prompt = "You are a helpful assistant";
+        let user_prompt = "What is 2+2?";
+
+        let request = provider.build_request(system_prompt, user_prompt).unwrap();
+
+        // Verify model is set correctly
+        assert_eq!(request.model, "anthropic/claude-3.5-sonnet");
+
+        // Verify messages structure
+        assert_eq!(request.messages.len(), 2);
+
+        // Verify first message is system message with correct content
+        match &request.messages[0] {
+            ChatCompletionRequestMessage::System(msg) => match &msg.content {
+                ChatCompletionRequestSystemMessageContent::Text(text) => {
+                    assert_eq!(text, system_prompt);
+                }
+                _ => panic!("System message content should be text"),
+            },
+            _ => panic!("First message should be a system message"),
+        }
+
+        // Verify second message is user message with correct content
+        match &request.messages[1] {
+            ChatCompletionRequestMessage::User(msg) => match &msg.content {
+                ChatCompletionRequestUserMessageContent::Text(text) => {
+                    assert_eq!(text, user_prompt);
+                }
+                _ => panic!("User message content should be text"),
+            },
+            _ => panic!("Second message should be a user message"),
+        }
     }
 }
