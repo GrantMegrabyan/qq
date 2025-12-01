@@ -14,3 +14,7 @@ provider = "openrouter"
 [providers.openrouter]
 api_key = "sk-or-v1-..."
 model = "kwaipilot/kat-coder-pro:free"
+
+[providers.openai]
+api_key = "sk-proj-..."
+model = "gpt-5-nano"
