@@ -1,3 +1,4 @@
+mod helpers;
 mod open_router;
 mod openai;
 
