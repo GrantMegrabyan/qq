@@ -1,12 +1,10 @@
+use std::{fs::OpenOptions, io::Write, path::PathBuf};
+
 use anyhow::Result;
 use derive_builder::Builder;
 use serde::Serialize;
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::path::PathBuf;
 
-use crate::configs::Config;
-use crate::persona::Persona;
+use crate::{configs::Config, persona::Persona};
 
 #[derive(Serialize, Builder, Clone)]
 #[builder(setter(into))]

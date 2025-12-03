@@ -1,13 +1,9 @@
 use std::path::PathBuf;
 
-use crate::Persona;
-use crate::args::Args;
-use crate::configs::config_file::ConfigFile;
-use crate::provider::Provider;
-
-use anyhow::Result;
-use anyhow::anyhow;
+use anyhow::{Result, anyhow};
 use derive_builder::Builder;
+
+use crate::{Persona, args::Args, configs::config_file::ConfigFile, provider::Provider};
 
 #[derive(Builder, Debug, Default)]
 #[builder(setter(into))]
@@ -89,9 +85,10 @@ impl Config {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
+    use std::collections::HashMap;
+
     use super::*;
     use crate::configs::types::ProviderConfig;
-    use std::collections::HashMap;
 
     fn create_test_args() -> Args {
         Args {

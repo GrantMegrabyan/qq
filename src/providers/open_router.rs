@@ -3,8 +3,7 @@ use async_openai::{Client, config::OpenAIConfig};
 use async_trait::async_trait;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
-use crate::provider::LLMProvider;
-use crate::providers::helpers::build_openai_request;
+use crate::{provider::LLMProvider, providers::helpers::build_openai_request};
 
 const OPEN_ROUTER_API_BASE: &str = "https://openrouter.ai/api/v1";
 

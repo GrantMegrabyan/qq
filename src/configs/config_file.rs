@@ -1,12 +1,9 @@
-use anyhow::{Result, anyhow};
-use std::collections::HashMap;
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
+use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 
-use crate::configs::types::ProviderConfig;
-use crate::persona::Persona;
-use crate::provider::Provider;
+use crate::{configs::types::ProviderConfig, persona::Persona, provider::Provider};
 
 #[derive(Deserialize, Serialize, Default, Debug)]
 pub struct ConfigFile {
@@ -86,14 +83,12 @@ impl ConfigFile {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use anyhow::Result;
     use std::collections::HashMap;
 
-    use crate::provider::Provider;
+    use anyhow::Result;
 
-    use super::ConfigFile;
-    use super::Persona;
-    use super::ProviderConfig;
+    use super::{ConfigFile, Persona, ProviderConfig};
+    use crate::provider::Provider;
 
     fn create_config_file() -> ConfigFile {
         ConfigFile {

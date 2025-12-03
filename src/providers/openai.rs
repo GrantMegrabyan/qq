@@ -2,8 +2,7 @@ use anyhow::{Context, Result, anyhow};
 use async_openai::{Client, config::OpenAIConfig};
 use async_trait::async_trait;
 
-use crate::provider::LLMProvider;
-use crate::providers::helpers::build_openai_request;
+use crate::{provider::LLMProvider, providers::helpers::build_openai_request};
 
 pub struct OpenAI {
     client: Client<OpenAIConfig>,

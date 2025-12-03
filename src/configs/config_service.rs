@@ -2,11 +2,15 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow};
 
-use crate::Args;
-use crate::configs::Config;
-use crate::configs::config_file::ConfigFile;
-use crate::configs::types::{Environment, FileSystem, RealEnvironment, RealFileSystem};
-use crate::provider::Provider;
+use crate::{
+    Args,
+    configs::{
+        Config,
+        config_file::ConfigFile,
+        types::{Environment, FileSystem, RealEnvironment, RealFileSystem},
+    },
+    provider::Provider,
+};
 
 const DEFAULT_CONFIG: &str = r#"
 # Persona to use

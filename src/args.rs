@@ -1,7 +1,6 @@
 use clap::{Parser, Subcommand};
 
-use crate::persona::Persona;
-use crate::provider::Provider;
+use crate::{persona::Persona, provider::Provider};
 
 #[derive(Parser)]
 #[command(name = "qq")]

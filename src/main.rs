@@ -8,22 +8,22 @@ mod prompts;
 mod provider;
 mod providers;
 
+use std::time::Instant;
+
 use arboard::Clipboard;
-use args::{Args, Commands, UseTarget};
 use chrono::Local;
 use clap::Parser;
 use spinoff::{Color, Spinner, spinners};
-use std::time::Instant;
 
-use crate::configs::Config;
-use crate::configs::ProdConfigService;
-use crate::logging::RequestLogEntryBuilder;
-use crate::persona::Persona;
-use crate::prompts::get_system_prompt;
-use crate::provider::LLMProvider;
-use crate::provider::Provider;
-use crate::providers::OpenAI;
-use crate::providers::OpenRouter;
+use crate::{
+    args::{Args, Commands, UseTarget},
+    configs::{Config, ProdConfigService},
+    logging::RequestLogEntryBuilder,
+    persona::Persona,
+    prompts::get_system_prompt,
+    provider::{LLMProvider, Provider},
+    providers::{OpenAI, OpenRouter},
+};
 
 #[tokio::main]
 async fn main() {
