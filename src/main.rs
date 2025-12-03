@@ -21,6 +21,7 @@ use crate::logging::RequestLogEntryBuilder;
 use crate::persona::Persona;
 use crate::prompts::get_system_prompt;
 use crate::provider::LLMProvider;
+use crate::provider::Provider;
 use crate::providers::OpenAI;
 use crate::providers::OpenRouter;
 
@@ -88,18 +89,9 @@ async fn run(args: &Args, config: &Config, log_entry: &mut RequestLogEntryBuilde
     log_entry.user_prompt(&user_prompt);
 
     // Dynamically instantiate provider based on config
-    let provider: Box<dyn LLMProvider> = match config.provider.as_str() {
-        "openrouter" => Box::new(OpenRouter::new(&config.api_key, &config.model)),
-        "openai" => Box::new(OpenAI::new(&config.api_key, &config.model)),
-        _ => {
-            let error = format!(
-                "Error: Unsupported provider '{}'\n\nCurrently supported providers: openrouter",
-                config.provider
-            );
-            log_entry.error(&error);
-            eprintln!("{}", error);
-            return;
-        }
+    let provider: Box<dyn LLMProvider> = match config.provider {
+        Provider::OpenRouter => Box::new(OpenRouter::new(&config.api_key, &config.model)),
+        Provider::OpenAI => Box::new(OpenAI::new(&config.api_key, &config.model)),
     };
 
     let mut spinner = Spinner::new(

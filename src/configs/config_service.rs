@@ -6,6 +6,7 @@ use crate::Args;
 use crate::configs::Config;
 use crate::configs::config_file::ConfigFile;
 use crate::configs::types::{Environment, FileSystem, RealEnvironment, RealFileSystem};
+use crate::provider::Provider;
 
 const DEFAULT_CONFIG: &str = r#"
 # Persona to use
@@ -50,16 +51,16 @@ impl<F: FileSystem, E: Environment> ConfigService<F, E> {
         Config::from_config_file(&config_file, args)
     }
 
-    pub fn update_provider(&self, provider_name: &str) -> Result<()> {
+    pub fn update_provider(&self, provider: &Provider) -> Result<()> {
         let config_path = self.get_config_path();
         let mut config_file = self.read_config_file(&config_path)?;
 
         config_file
-            .update_provider(provider_name)
+            .update_provider(provider)
             .context(format!("Config file: {:?}", config_path))?;
         self.save_config_file(&config_file, &config_path)?;
 
-        println!("✓ Provider set to '{}'", provider_name);
+        println!("✓ Provider set to '{:?}'", provider);
         Ok(())
     }
 
@@ -228,7 +229,7 @@ mod tests {
 
         assert!(result.is_ok());
         let config = result.unwrap();
-        assert_eq!(config.provider, "openrouter");
+        assert_eq!(config.provider, Provider::OpenRouter);
         assert_eq!(config.model, "anthropic/claude-3.5-sonnet");
         assert_eq!(config.api_key, "test-key");
     }
@@ -302,9 +303,9 @@ mod tests {
     api_key = "test-key"
     model = "anthropic/claude-3.5-sonnet"
 
-    [providers.anthropic]
-    api_key = "anthropic-key"
-    model = "claude-3-opus"
+    [providers.openai]
+    api_key = "openai-key"
+    model = "gpt-3.5"
     "#
             .to_string())
         });
@@ -312,11 +313,11 @@ mod tests {
         mock_fs
             .expect_write()
             .times(1)
-            .withf(|_, content: &str| content.contains(r#"provider = "anthropic""#))
+            .withf(|_, content: &str| content.contains(r#"provider = "openai""#))
             .returning(|_, _| Ok(()));
 
         let service = ConfigService::new(mock_fs, mock_env);
-        let result = service.update_provider("anthropic");
+        let result = service.update_provider(&Provider::OpenAI);
 
         assert!(result.is_ok());
     }

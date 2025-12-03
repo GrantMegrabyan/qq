@@ -47,7 +47,7 @@ pub struct ConfigForLogging {
 impl From<&Config> for ConfigForLogging {
     fn from(config: &Config) -> Self {
         Self {
-            provider: config.provider.clone(),
+            provider: format!("{:?}", config.provider),
             model: config.model.clone(),
             persona: config.persona,
             auto_copy: config.auto_copy,

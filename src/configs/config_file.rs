@@ -1,41 +1,44 @@
 use anyhow::{Result, anyhow};
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{configs::types::ProviderConfig, persona::Persona};
+use crate::configs::types::ProviderConfig;
+use crate::persona::Persona;
+use crate::provider::Provider;
 
 #[derive(Deserialize, Serialize, Default, Debug)]
 pub struct ConfigFile {
-    pub provider: Option<String>,
-    pub providers: Option<HashMap<String, ProviderConfig>>,
+    pub provider: Option<Provider>,
+    pub providers: Option<HashMap<Provider, ProviderConfig>>,
     pub persona: Option<Persona>,
     pub auto_copy: bool,
     pub log_file: Option<PathBuf>,
 }
 
 impl ConfigFile {
-    pub fn update_provider(&mut self, provider_name: &str) -> Result<()> {
+    pub fn update_provider(&mut self, provider: &Provider) -> Result<()> {
         // Verify provider exists in config
         if let Some(ref providers) = self.providers {
-            if !providers.contains_key(provider_name) {
-                let available: Vec<_> = providers.keys().map(|s| s.as_str()).collect();
+            if !providers.contains_key(provider) {
+                let available: Vec<String> = providers.keys().map(|p| format!("{:?}", p)).collect();
                 return Err(anyhow!(
-                    "Provider '{}' not found in config\n\nAvailable providers: {}\nAdd a [providers.{}] section to your config",
-                    provider_name,
+                    "Provider '{:?}' not found in config\n\nAvailable providers: {}\nAdd a [providers.{:?}] section to your config",
+                    provider,
                     available.join(", "),
-                    provider_name
+                    provider
                 ));
             }
         } else {
             return Err(anyhow!(
-                "No providers configured in config\nAdd a [providers.{}] section",
-                provider_name
+                "No providers configured in config\nAdd a [providers.{:?}] section",
+                provider
             ));
         }
 
         // Update provider
-        self.provider = Some(String::from(provider_name));
+        self.provider = Some(provider.clone());
         Ok(())
     }
 
@@ -50,7 +53,7 @@ impl ConfigFile {
             if let Some(provider_config) = providers.get_mut(&provider) {
                 provider_config.model = String::from(model_name);
             } else {
-                return Err(anyhow!("Provider '{}' not found in config", provider,));
+                return Err(anyhow!("Provider '{:?}' not found in config", provider,));
             }
         } else {
             return Err(anyhow!("No providers configured in config"));
@@ -70,7 +73,7 @@ impl ConfigFile {
             if let Some(provider_config) = providers.get_mut(&provider) {
                 provider_config.api_key = String::from(api_key);
             } else {
-                return Err(anyhow!("Provider '{}' not found in config", provider));
+                return Err(anyhow!("Provider '{:?}' not found in config", provider));
             }
         } else {
             return Err(anyhow!("No providers configured in config"));
@@ -86,6 +89,8 @@ mod tests {
     use anyhow::Result;
     use std::collections::HashMap;
 
+    use crate::provider::Provider;
+
     use super::ConfigFile;
     use super::Persona;
     use super::ProviderConfig;
@@ -94,21 +99,21 @@ mod tests {
         ConfigFile {
             providers: Some(HashMap::from([
                 (
-                    "openrouter".to_string(),
+                    Provider::OpenRouter,
                     ProviderConfig {
                         api_key: "openrouter-key".to_string(),
                         model: "gpt-4".to_string(),
                     },
                 ),
                 (
-                    "openai".to_string(),
+                    Provider::OpenAI,
                     ProviderConfig {
                         api_key: "openai-key".to_string(),
                         model: "gpt-3.5".to_string(),
                     },
                 ),
             ])),
-            provider: Some("openrouter".to_string()),
+            provider: Some(Provider::OpenRouter),
             persona: Some(Persona::Default),
             auto_copy: true,
             log_file: None,
@@ -119,7 +124,10 @@ mod tests {
     fn test_update_model() -> Result<()> {
         let mut config = create_config_file();
         config.update_model("gpt-5")?;
-        assert_eq!(config.providers.unwrap()["openrouter"].model, "gpt-5");
+        assert_eq!(
+            config.providers.unwrap()[&Provider::OpenRouter].model,
+            "gpt-5"
+        );
         Ok(())
     }
 
@@ -137,7 +145,7 @@ mod tests {
         let mut config = create_config_file();
         config.update_api_key("new-api-key")?;
         assert_eq!(
-            config.providers.unwrap()["openrouter"].api_key,
+            config.providers.unwrap()[&Provider::OpenRouter].api_key,
             "new-api-key"
         );
         Ok(())
@@ -146,15 +154,16 @@ mod tests {
     #[test]
     fn test_update_provider() -> Result<()> {
         let mut config = create_config_file();
-        config.update_provider("openai")?;
-        assert_eq!(config.provider.unwrap(), "openai");
+        config.update_provider(&Provider::OpenAI)?;
+        assert_eq!(config.provider.unwrap(), Provider::OpenAI);
         Ok(())
     }
 
     #[test]
     fn test_update_provider_to_non_existing() -> Result<()> {
         let mut config = create_config_file();
-        let result = config.update_provider("non-existing-provider");
+        config.providers.as_mut().unwrap().remove(&Provider::OpenAI);
+        let result = config.update_provider(&Provider::OpenAI);
         assert!(result.is_err());
         Ok(())
     }
@@ -163,7 +172,7 @@ mod tests {
     fn test_update_provider_when_no_providers() -> Result<()> {
         let mut config = create_config_file();
         config.providers = None;
-        let result = config.update_provider("openrouter");
+        let result = config.update_provider(&Provider::OpenRouter);
         assert!(result.is_err());
         Ok(())
     }

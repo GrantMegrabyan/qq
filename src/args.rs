@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 
 use crate::persona::Persona;
+use crate::provider::Provider;
 
 #[derive(Parser)]
 #[command(name = "qq")]
@@ -42,7 +43,7 @@ pub enum UseTarget {
     /// Set the active provider
     Provider {
         /// Provider name (e.g., "openrouter")
-        name: String,
+        name: Provider,
     },
     /// Set the model for the active provider
     Model {
